@@ -2,6 +2,5 @@
 # ideas for things to add
 
 - 'area' and 'room' objects, to begin defining the world.  The area objects should be very simple, nothing more than containers for other areas and rooms, with stats.  Right now I envision areas defined by directories, while rooms will be files.  However, I think each area will need an 'area stats' file to keep track of it's state.  Simple organization like this, with nesting, should prove flexible in the future.
-- a 'who' command to confirm multiple players logged in simultaneously
 - room exits
 - simple movement commands
