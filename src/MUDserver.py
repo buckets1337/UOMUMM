@@ -23,7 +23,7 @@
 Simple MUD server using miniboa
 """
 import time, os, sys
-import Engine, ClientInfo
+import Engine, ClientInfo, Renderer
 import CONFIG
 sys.path.append('../')
 from miniboa import TelnetServer
@@ -69,7 +69,8 @@ class Server():
 		timeout = .05
 		)
 
-		self.Engine = Engine.Engine(self, self.server_run, self.god_list, self.cc, self.pd)  
+		self.Engine = Engine.Engine(self, self.server_run, self.god_list, self.cc, self.pd)
+		self.Renderer = Renderer.Renderer(self)
 		
 
 

@@ -37,12 +37,10 @@ class Engine():
 				if self.needs_pw:
 					if player.isFirstTime:
 						self.passwordPrompt(client, player)
-						#self.passwordAuth(client, player)
 					else:
 						self.writePlayerPasswordToFile(client, player)
 						self.passwordAuth(client, player)
 					if player.authSuccess:
-						#print "WIN"
 						self.owner.printLog(">> %s (%s) authenticated successfully." %(player.player_data_ID, player.name), self.owner.log_file)
 						player.saveToFile()
 				self.checkForCommand(client, player)
@@ -76,13 +74,10 @@ class Engine():
 		checks to see if a player just logged in.  If so, the player will have None for a name
 		returns True if the player is new, else False
 		'''
-		# print player.name
-		# print self.msg
+
 		if player.authSuccess == False:
-			#player just logged in, and does not yet have a name
 			if player.name == None:
 				player.name = self.msg
-				#print 'name:' + player.name
 
 			if player.password == None or player.password.startswith("$5$rounds="):
 				return True
@@ -132,7 +127,6 @@ class Engine():
 			return
 
 		if player.isNew:
-			#print 'self.msg: ' + str(self.msg)
 			player.isNew = False
 			f.write(str(sha256_crypt.encrypt(self.msg)) + "\n")
 			f.write('name=' + str(player.name) +'\n')
@@ -150,20 +144,12 @@ class Engine():
 
 		if player.password is None:
 			player.password = f.readline()[:-1]
-		# print 'pwff:' + str(player.password)
-		# print len(player.password)
 
 		if len(player.password) > 0:
-			# print self.msg, player.password
-			# print player.authSuccess
 			player.authSuccess = sha256_crypt.verify(str(self.msg), player.password)
-			# print self.msg, player.password
-			# print player.authSuccess
 
 		else:
 			player.authSuccess = True
-			# print 'smsg:' + self.msg
-			# print 'pw:' + player.password
 			self.owner.printLog("No password on file for " + str(player.name), self.owner.log_file)
 
 		if not player.authSuccess:
@@ -177,7 +163,6 @@ class Engine():
 				self.owner.printLog(">> Kicking " + str(self.player_data_ID) + " (too many failed pw)", self.owner.log_file)
 				client.active = False
 				player.active = False
-				#print self.owner.cc
 			else:
 				client.send_cc("Incorrect password.  Please try again.\n")
 				player.numTries += 1
@@ -186,10 +171,7 @@ class Engine():
 
 		elif player.authSuccess:
 			self.needs_pw = False
-			# print 'success! ' + str(player.authSuccess)
-			# print 'pp: ' + str(player.password)
-
-		#player.password = None
+			
 		f.close()
 
 
@@ -198,18 +180,15 @@ class Engine():
 		checks self.cmd to see if there is a recognized command
 		'''
 		if self.cmd == 'quit':
-			#self.owner.cc.remove(client)
 			self.owner.printLog("-- %s quit." %player.name, self.owner.log_file)
 			client.active = False
 
 		elif self.cmd == 'who':
 			playerNames = ''
 			for player in self.owner.pd:
-				playerNames += "| " + self.owner.pd[player].name + ((34-len(self.owner.pd[player].name))*" ") + "|\n"
-			client.send_cc(" ____Players Currently Connected____\n|" + (35*" ") + "|\n")
-			client.send_cc(playerNames)
-			client.send_cc("|___________________________________|\n")
-
+				playerNames += self.owner.pd[player].name + '\n'
+			self.owner.Renderer.messageBox(client, 'Currently Connected Players', playerNames)
+			
 		elif self.cmd == 'say':
 			messageStr = str(player.name) + ":"
 			for arg in self.args:
