@@ -159,7 +159,7 @@ class Server():
 		"""
 		playerDataID = str(client.addrport())
 		self.printLog( "++ Opened connection to %s" % client.addrport(), self.log_file ) #need a printLog function
-		self.broadcast('%s connected.\n' % client.addrport() )
+		#self.broadcast('%s connected.\n' % client.addrport() )
 		self.cc.append(client)
 
 		clientID = self.id_counter
@@ -171,7 +171,10 @@ class Server():
 		self.pd[playerDataID].authSuccess = False       #holds information about the success of login attempts
 		self.pd[playerDataID].numTries = 0              #the number of login attempts.
 
-		client.send("\nWelcome to " + self.name + "!\nPlease tell us your name.\n%s" % str(self.pd[playerDataID].prompt))
+		# client.send("\n  ____________" + (len(self.name) * "_") + "__\n")
+		client.send_cc("\n ^I  Welcome to ^!" + self.name + "^~^I!  ^~\n\n")
+		# client.send(" |____________" + (len(self.name) * "_") + "__|\n\n")
+		client.send("Please tell us your name.\n%s" % str(self.pd[playerDataID].prompt))
 
 
 	def on_disconnect(self, client):
@@ -218,6 +221,7 @@ class Server():
 		"""
 		for client in self.cc:
 			client.send_cc(msg + "\n")
+			self.printLog("   " + msg, self.log_file)
 
 
 	def stateCheck(self):
@@ -230,9 +234,10 @@ class Server():
 			# RoomInit.saveAllRooms()
 			# MobInit.saveMobs()
 			# Objects.saveEq()
+			self.printLog("<< Server shutdown.", self.log_file)
 			self.server_run = False
 
-			self.printLog("<< Server shutdown.", self.log_file)
+
 
 
 #------------------------------------------------------------------------------

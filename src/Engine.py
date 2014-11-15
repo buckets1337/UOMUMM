@@ -43,6 +43,7 @@ class Engine():
 					if player.authSuccess:
 						self.owner.printLog(">> %s (%s) authenticated successfully." %(player.player_data_ID, player.name), self.owner.log_file)
 						player.saveToFile()
+						client.send_cc("Password confirmed.  Enjoy your time in %s!\n\n" %self.owner.name)
 				self.checkForCommand(client, player)
 
 		return 'normal'
@@ -95,13 +96,13 @@ class Engine():
 
 		if os.path.isfile(path):
 			client.send("\nWelcome back, %s!\n" %player.name)
-			client.send("Please enter your password.\n")
+			client.send("Please enter your password.\n>>")
 			player.isNew = False
 			player.isFirstTime = False
 
 		else:
 			client.send("\nHello, %s!\n" % player.name)
-			client.send("Choose a password.  It can be anything, just be sure to remember it.  If you lose your password, your character is gone forever!\n")
+			client.send("Choose a password.  It can be anything, just be sure to remember it.  If you lose your password, your character is gone forever!\n>>")
 
 			file_path = path
 			dir_path = "../data/client/" + self.owner.name + "/" + player.name + "/"       
@@ -179,20 +180,21 @@ class Engine():
 		'''
 		checks self.cmd to see if there is a recognized command
 		'''
-		if self.cmd == 'quit':
-			self.owner.printLog("-- %s quit." %player.name, self.owner.log_file)
-			client.active = False
+		if player.authSuccess:
+			if self.cmd == 'quit':
+				self.owner.printLog("-- %s quit." %player.name, self.owner.log_file)
+				client.active = False
 
-		elif self.cmd == 'who':
-			playerNames = ''
-			for player in self.owner.pd:
-				playerNames += self.owner.pd[player].name + '\n'
-			self.owner.Renderer.messageBox(client, 'Currently Connected Players', playerNames)
-			
-		elif self.cmd == 'say':
-			messageStr = str(player.name) + ":"
-			for arg in self.args:
-				messageStr += " " + arg
-			self.owner.broadcast(messageStr)
+			elif self.cmd == 'who':
+				playerNames = ''
+				for player in self.owner.pd:
+					playerNames += self.owner.pd[player].name + '\n'
+				self.owner.Renderer.messageBox(client, 'Currently Connected Players', playerNames)
+				
+			elif self.cmd == 'say':
+				messageStr = str(player.name) + ":"
+				for arg in self.args:
+					messageStr += " " + arg
+				self.owner.broadcast(messageStr)
 
 

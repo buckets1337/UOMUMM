@@ -68,12 +68,11 @@ class Renderer():
 		return formatted
 
 
-
 	def messageBox(self, client, title, message):
 		'''
 		displays a simple <message> in a box for <client>.
 		The box resizes to fit the message and title.
-		Has a <title> at the top of the box.
+		Has a <title> at the top of the box along the border.
 		'''
 		message = self.formatMessage(message, 76)
 		#print message
@@ -101,17 +100,18 @@ class Renderer():
 
 		#print int((0.5)*float(longest))
 		if longest >= len(str(title)):
-			titleLine = "\n  " + (int((0.5)*float(longest - len(str(title)))+1)* "_") + str(title) + (int((0.5)*float(longest - len(str(title)))+1)* "_") + "\n"
-			if len(titleLine)-2 > (longest + 2):
+			titleLine = "\n  " + (int((0.5)*float(longest - len(str(title)))+1)* "_") + "^!"+str(title)+"^~" + (int((0.5)*float(longest - len(str(title)))+1)* "_") + "\n"
+			titleLineLen = len(titleLine) - 6
+			if titleLineLen > (longest + 2):
 				#print len(titleLine)
 				#print longest + 2
-				diff = len(titleLine)-2 - (longest + 2) - 1
+				diff = titleLineLen - (longest + 2) - 1
 				if not diff <= 0:
 					titleLine = titleLine[:-diff] + "\n"
 				if diff == 0:
 					titleLine = titleLine[:-1] + "_\n"
-			elif (longest + 2) >= len(titleLine)-2:
-				diff = (longest + 2) - len(titleLine)-2
+			elif (longest + 2) >= titleLineLen:
+				diff = (longest + 2) - titleLineLen
 				if titleLine.endswith("\n"):
 					titleLine = titleLine[:-1]
 				titleLine += (diff * "_") + "\n"
@@ -121,7 +121,7 @@ class Renderer():
 			client.send_cc(finalMsg)
 			client.send_cc(" |" + ((longest + 2)*"_") + "|\n\n")
 		else:
-			client.send_cc("\n  __" + str(title) + "__\n")
+			client.send_cc("\n  __^!" + str(title) + "^~__\n")
 			client.send_cc(" |" + ((4 + len(str(title))) * " ") + "|\n")
 			client.send_cc(finalMsg)
 			client.send_cc(" |" + ((4 + len(str(title))) * "_") + "|\n\n")
