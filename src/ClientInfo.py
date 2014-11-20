@@ -21,6 +21,9 @@ class ClientInfo():
 		self.active = False		#is the client still connected?
 		self.gameState = 'normal'
 
+		self.activeChatChannel = None
+		self.chatChannels = []
+
 
 	def saveToFile(self):
 		'''

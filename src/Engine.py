@@ -6,6 +6,7 @@ sys.path.append('../')
 from passlib.hash import sha256_crypt
 
 import CONFIG
+from commands import chat as cChat
 
 class Engine():
 	'''
@@ -180,6 +181,7 @@ class Engine():
 		'''
 		checks self.cmd to see if there is a recognized command
 		'''
+		#print self.cmd.startswith("'")
 		if player.authSuccess:
 			if self.cmd == 'quit':
 				self.owner.printLog("-- %s quit." %player.name, self.owner.log_file)
@@ -197,4 +199,107 @@ class Engine():
 					messageStr += " " + arg
 				self.owner.broadcast(messageStr)
 
+			elif self.cmd == 'chat' or self.cmd == 'c':
+				if self.args[0] == 'newChat' or self.args[0] == '/new':		
+					if len(self.args) >= 2:
+						channelName = ''
+						for arg in self.args[1:]:
+							channelName += " " + arg
+						channelName = channelName[1:]
+						cChat.newChannel(self.owner, channelName, player)
+					else:
+						player.connection.send_cc("What did you want to call the channel?\n")
 
+				elif self.args[0] == 'listChat' or self.args[0] == '/list':
+					cChat.listChannels(self.owner, player)
+
+				elif self.args[0] == 'switchChat' or self.args[0] == '/switch':
+					if len(self.args) >= 2:
+						#print self.args
+						channelName = ''
+						for arg in self.args[1:]:
+							channelName += " " + arg
+						channelName = channelName[1:]
+						cChat.changeActiveChannel(self.owner, player, channelName)
+					else:
+						player.connection.send_cc("^!What channel did you want to switch to?^~\n")
+
+				elif self.args[0] == 'leaveChat' or self.args[0] == '/leave':
+					if len(self.args) >= 2:
+						channelName = ''
+						for arg in self.args[1:]:
+							channelName += " " + arg
+						channelName = channelName[1:]
+						cChat.leaveChannel(self.owner, player, channelName)
+					else:
+						player.connection.send_cc("What channel did you want to leave?\n")
+
+				elif self.args[0] == 'delChat' or self.args[0] == '/del':	# not implemented
+					if len(self.args) <= 1:
+						if player.activeChatChannel != None:
+							cChat.delChannel(self.owner, player.activeChatChannel, player)
+						else:
+							player.connection.send_cc("^!You must be active in a channel to delete it.\n^~")
+					else:
+						chanName = ''
+						for arg in self.args[1:]:
+							chanName += ' ' + arg
+						chanName = chanName [1:]
+						target = None
+						for chan in self.owner.chatManager.chatList:
+							if chan.name == chanName:
+								target = chan
+						if target != None:
+							cChat.delChannel(self.owner, target, player)
+						else:
+							player.connection.send_cc("^!There doesn't appear to be a '" + chanName + "' channel.^~\n")
+
+				elif self.args[0] == 'meChat' or self.args[0] == '/me':		# not implemented
+					cChat.playerChannelInfo(self.owner, player)
+
+				elif self.args[0] == 'infoChat' or self.args[0] == '/info':
+					if player.activeChatChannel != None:
+						player.activeChatChannel.info(player)
+					else:
+						player.connection.send_cc("^!You must be active in a channel to get information about it.\n^~")
+
+				elif self.args[0] == 'whoChat' or self.args[0] == '/who':
+					if player.activeChatChannel != None:
+						player.activeChatChannel.listPlayers(player)
+					else:
+						player.connection.send_cc("^!You must be active in a channel to see who is in it.\n^~")
+
+				elif self.args[0] == 'exitChat' or self.args[0] == '/exit':
+					if player.activeChatChannel != None:
+						player.activeChatChannel.removePlayer(player)
+					else:
+						player.connection.send_cc("^!You must be active in a channel to exit it.\n^~")
+
+				else:
+					if player.activeChatChannel != None:
+						player.activeChatChannel.sendMessage(self.owner, player, self.cmd, self.msg)
+					else:
+						player.connection.send_cc("^!You are not active in a chat channel!^~\nSwitch to a chat channel to chat.\n")
+
+
+			elif self.cmd.startswith("'") or self.cmd.startswith("`"):
+				targetName = self.cmd[1:]
+				if targetName.startswith(' '):
+					targetName = targetName[1:]
+				if len(targetName) == 0:
+					targetName = player.activeChatChannel.name
+				msg = ''
+				for arg in self.args:
+					msg += " " + arg
+				msg = msg[1:]
+				success = False
+				for chan in self.owner.chatManager.chatList:
+					if chan.name == targetName:
+						if player in chan.players:
+							chan.sendMessage(self.owner, player, self.cmd, msg)
+							success = True
+						else:
+							player.connection.send_cc("^!You aren't currently in <" + targetName + ">!^~\nSwitch to <" + targetName + "> to send a message.\n")
+							success = True
+				if success == False:
+					player.connection.send_cc("^!There doesn't appear to be a '" + targetName + "' chat channel.^`\n")

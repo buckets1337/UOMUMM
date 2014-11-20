@@ -23,7 +23,7 @@
 Simple MUD server using miniboa
 """
 import time, os, sys
-import Engine, ClientInfo, Renderer
+import Engine, ClientInfo, Renderer, ChatManager
 import CONFIG
 sys.path.append('../')
 from miniboa import TelnetServer
@@ -39,6 +39,7 @@ class Server():
 		self.id_counter = 0
 		self.idle_timeout = CONFIG.IDLE_TIMEOUT
 		self.log_file = None
+		self.chat_log_file_byDate = None
 		self.connected_clients = []
 		self.cc = self.connected_clients
 		self.server_run = True
@@ -71,6 +72,7 @@ class Server():
 
 		self.Engine = Engine.Engine(self, self.server_run, self.god_list, self.cc, self.pd)
 		self.Renderer = Renderer.Renderer(self)
+		self.chatManager = ChatManager.chatManager(self)
 		
 
 
@@ -106,11 +108,16 @@ class Server():
 		time_string = time.strftime('%H_%M_%S')
 		date = time.strftime('%m_%d')
 		dataPath = '../data/'
-		logPath = '../data/log/'
-		server_path = '../data/log/' + self.name + '/'
-		all_path = '../data/log/' + self.name + '/all/'
-		path = '../data/log/' + self.name + '/all/' + date + '/'
-		file_path = '../data/log/' + self.name + '/all/' + date + '/' + time_string
+		logPath = dataPath + 'log/'
+		server_path = logPath + self.name + '/'
+		all_path = server_path +'all/'
+		chat_path = server_path +'chat/'
+		path = all_path + date + '/'
+		chat_by_date = chat_path + 'byDate/'
+		chat_by_channel = chat_path + 'byChannel/'
+		chat_date = chat_by_date + date + '/'
+		file_path = path + time_string
+		chat_log_path = chat_date + time_string
 
 		if not os.path.exists(dataPath):
 			os.mkdir(dataPath)
@@ -120,13 +127,26 @@ class Server():
 			os.mkdir(server_path)
 		if not os.path.exists(all_path):
 			os.mkdir(all_path)
+		if not os.path.exists(chat_path):
+			os.mkdir(chat_path)
 		if not os.path.exists(path):
 			os.mkdir(path)
+		if not os.path.exists(chat_by_date):
+			os.mkdir(chat_by_date)
+		if not os.path.exists(chat_by_channel):
+			os.mkdir(chat_by_channel)
+		if not os.path.exists(chat_date):
+			os.mkdir(chat_date)
 		if not os.path.exists(file_path):
 			f = open(file_path, 'a')
 			f.close()
+		if not os.path.exists(chat_log_path):
+			f = open(chat_log_path, 'a')
+			f.close()
 
 		self.log_file = file_path
+		self.chat_log_file_byDate = chat_log_path
+		self.chat_log_file_byChannel = chat_by_channel
 
 
 	def setupClientRecords(self):
@@ -141,13 +161,14 @@ class Server():
 			os.mkdir(serverPath)
 
 
-	def printLog(self, entry, log_file):
+	def printLog(self, entry, log_file, printEntry = True):
 		'''
 		prints a message to the console, and to a log file
 		'''
 		time_stamp = time.strftime('%H:%M:%S')
 		log_file = str(log_file)
-		print entry
+		if printEntry == True:
+			print entry
 		with open(log_file, 'a') as f:
 			f.write('[' + str(time_stamp) + '] ' + entry + '\n')
 
