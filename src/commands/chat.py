@@ -1,6 +1,114 @@
-# cChat.py
+# chat.py
 # subcommands for the 'chat' command relating to more than one channel
 
+
+def chatCommand(engine, client, player):
+	'''
+	processes the subcommands of chat
+	'''
+	if engine.args[0] == 'newChat' or engine.args[0] == '/new':		
+		if len(engine.args) >= 2:
+			channelName = ''
+			for arg in engine.args[1:]:
+				channelName += " " + arg
+			channelName = channelName[1:]
+			newChannel(engine.owner, channelName, player)
+		else:
+			player.connection.send_cc("What did you want to call the channel?\n")
+
+	elif engine.args[0] == 'listChat' or engine.args[0] == '/list':
+		listChannels(engine.owner, player)
+
+	elif engine.args[0] == 'switchChat' or engine.args[0] == '/switch':
+		if len(engine.args) >= 2:
+			#print engine.args
+			channelName = ''
+			for arg in engine.args[1:]:
+				channelName += " " + arg
+			channelName = channelName[1:]
+			changeActiveChannel(engine.owner, player, channelName)
+		else:
+			player.connection.send_cc("^!What channel did you want to switch to?^~\n")
+
+	elif engine.args[0] == 'leaveChat' or engine.args[0] == '/leave':
+		if len(engine.args) >= 2:
+			channelName = ''
+			for arg in engine.args[1:]:
+				channelName += " " + arg
+			channelName = channelName[1:]
+			leaveChannel(engine.owner, player, channelName)
+		else:
+			player.connection.send_cc("What channel did you want to leave?\n")
+
+	elif engine.args[0] == 'delChat' or engine.args[0] == '/del':	# not implemented
+		if len(engine.args) <= 1:
+			if player.activeChatChannel != None:
+				delChannel(engine.owner, player.activeChatChannel, player)
+			else:
+				player.connection.send_cc("^!You must be active in a channel to delete it.\n^~")
+		else:
+			chanName = ''
+			for arg in engine.args[1:]:
+				chanName += ' ' + arg
+			chanName = chanName [1:]
+			target = None
+			for chan in engine.owner.chatManager.chatList:
+				if chan.name == chanName:
+					target = chan
+			if target != None:
+				delChannel(engine.owner, target, player)
+			else:
+				player.connection.send_cc("^!There doesn't appear to be a '" + chanName + "' channel.^~\n")
+
+	elif engine.args[0] == 'meChat' or engine.args[0] == '/me':		# not implemented
+		playerChannelInfo(engine.owner, player)
+
+	elif engine.args[0] == 'infoChat' or engine.args[0] == '/info':
+		if player.activeChatChannel != None:
+			player.activeChatChannel.info(player)
+		else:
+			player.connection.send_cc("^!You must be active in a channel to get information about it.\n^~")
+
+	elif engine.args[0] == 'whoChat' or engine.args[0] == '/who':
+		if player.activeChatChannel != None:
+			player.activeChatChannel.listPlayers(player)
+		else:
+			player.connection.send_cc("^!You must be active in a channel to see who is in it.\n^~")
+
+	elif engine.args[0] == 'exitChat' or engine.args[0] == '/exit':
+		if player.activeChatChannel != None:
+			player.activeChatChannel.removePlayer(player)
+		else:
+			player.connection.send_cc("^!You must be active in a channel to exit it.\n^~")
+
+	else:
+		if player.activeChatChannel != None:
+			player.activeChatChannel.sendMessage(engine.owner, player, engine.cmd, engine.msg)
+		else:
+			player.connection.send_cc("^!You are not active in a chat channel!^~\nSwitch to a chat channel to chat.\n")
+
+
+def quickChat(engine, client, player):
+	targetName = engine.cmd[1:]
+	if targetName.startswith(' '):
+		targetName = targetName[1:]
+	if len(targetName) == 0:
+		targetName = player.activeChatChannel.name
+	msg = ''
+	for arg in engine.args:
+		msg += " " + arg
+	msg = msg[1:]
+	success = False
+	for chan in engine.owner.chatManager.chatList:
+		if chan.name == targetName:
+			if player in chan.players:
+				chan.sendMessage(engine.owner, player, engine.cmd, msg)
+				success = True
+			else:
+				player.connection.send_cc("^!You aren't currently in <" + targetName + ">!^~\nSwitch to <" + targetName + "> to send a message.\n")
+				success = True
+	if success == False:
+		player.connection.send_cc("^!There doesn't appear to be a '" + targetName + "' chat channel.^`\n")
 
 
 def newChannel(server, channelName, author):
