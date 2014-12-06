@@ -8,6 +8,7 @@ class Renderer():
 	def __init__(self, server):
 		self.owner = server
 
+
 	def formatMessage(self, message, width):
 		'''
 		splits a <message> string into lines that are <width> characters long without breaking words 

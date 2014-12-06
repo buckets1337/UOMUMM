@@ -222,7 +222,7 @@ class Server():
 		self.broadcast('%s leaves the conversation.\n' % playerDataID )
 
 
-	def kickIdle(self):		#probably boken atm
+	def kickIdle(self):		#seems to be working, but probably needs more testing.  Inconsistant behavior for clients on kick.
 		"""
 		Looks for idle clients and disconnects them by setting active to False.
 		"""

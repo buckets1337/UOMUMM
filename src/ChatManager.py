@@ -51,7 +51,7 @@ class chatManager():
 		sends a message to ALL chat channels
 		'''
 		for chan in self.chatList:
-			self.sendMessage(self.owner, sender, "   ", message)
+			chan.sendMessage(self.owner, sender, "   ", message)
 
 
 
@@ -63,6 +63,8 @@ class chatChannel():
 		self.owner = owner
 		self.messages = []
 		self.players = []
+		self.whitelist = []
+		self.blacklist = []
 		self.name = channelName
 		self.author = author
 		self.password = None
@@ -89,6 +91,7 @@ class chatChannel():
 		# self.owner.owner.printLog(msg, self.owner.owner.log_file)
 		# self.owner.owner.printLog(msg, self.owner.owner.chat_log_file_byDate, printEntry = False)
 		# self.owner.owner.printLog(msg, self.chat_channel_log, printEntry = False)
+
 
 	def printChatLog(self, msg, shortMsg, printEntry = True):
 		'''
@@ -130,49 +133,75 @@ class chatChannel():
 		'''
 		adds a player to the chat channel, checking the password if one is present
 		'''
-		# if player.activeChatChannel != None:
-		# 	player.activeChatChannel.players.remove(player)
-		player.activeChatChannel = self
-		if player not in self.players:
-			self.players.append(player)
-			player.chatChannels.append(self)
-		if switch == False:
-			player.connection.send_cc("^!Welcome to <" + player.activeChatChannel.name + ">.^~\n")
-			if str(len(self.players) - 1) > 1:
-				player.connection.send_cc(str(len(self.players) - 1) + " other players.\n")
-			elif str(len(self.players) - 1) == 1:
-				player.connection.send_cc(str(len(self.players) - 1) + " other player.\n")
+		addPlayer = False
+		if len(self.whitelist) != 0:
+			#should only allow a player to join the channel if they are on the whiteList
+			if player == self.author or (player.name in self.whitelist):
+				addPlayer = True
 			else:
-				player.connection.send_cc("No other players.\n")
+				player.connection.send_cc("It appears you are not allowed in this channel.\n")
+				
+		elif len(self.blacklist) != 0:
+			#should only allow a player to join the channel if they are on the blackList
+			if player == self.author or (player.name not in self.blacklist):
+				addPlayer = True
+			else:
+				player.connection.send_cc("It appears you are not allowed in this channel.\n")
 		else:
-			if str(len(self.players) - 1) > 1:
-				player.connection.send_cc("^!Switched to <" + player.activeChatChannel.name + "> (" + str(len(player.activeChatChannel.players) - 1) + " others).^~\n")
-			elif str(len(self.players) - 1) == 1:
-				player.connection.send_cc("^!Switched to <" + player.activeChatChannel.name + "> (" + str(len(player.activeChatChannel.players) - 1) + " other).^~\n")
+			addPlayer = True
+
+		if addPlayer:
+			player.activeChatChannel = self
+			if player not in self.players:
+				self.players.append(player)
+				player.chatChannels.append(self)
+			if switch == False:
+				player.connection.send_cc("^!Welcome to <" + player.activeChatChannel.name + ">.^~\n")
+				if str(len(self.players) - 1) > 1:
+					player.connection.send_cc(str(len(self.players) - 1) + " other players.\n")
+				elif str(len(self.players) - 1) == 1:
+					player.connection.send_cc(str(len(self.players) - 1) + " other player.\n")
+				else:
+					player.connection.send_cc("No other players.\n")
 			else:
-				player.connection.send_cc("^!Switched to <" + player.activeChatChannel.name + "> (No others).^~\n")
+				if str(len(self.players) - 1) > 1:
+					player.connection.send_cc("^!Switched to <" + player.activeChatChannel.name + "> (" + str(len(player.activeChatChannel.players) - 1) + " others).^~\n")
+				elif str(len(self.players) - 1) == 1:
+					player.connection.send_cc("^!Switched to <" + player.activeChatChannel.name + "> (" + str(len(player.activeChatChannel.players) - 1) + " other).^~\n")
+				else:
+					player.connection.send_cc("^!Switched to <" + player.activeChatChannel.name + "> (No others).^~\n")
 
-		for plyr in self.players:
-			if plyr != player:
-				msg = "^!<" + self.name + ">^~ " +player.name + " joined the channel.\n"
-				plyr.connection.send_cc(msg)
+			for plyr in self.players:
+				if plyr != player:
+					if switch == False:
+						msg = "^!<" + self.name + ">^~ " +player.name + " joined the channel.\n"
+						plyr.connection.send_cc(msg)
 
-		self.addMessage(player, "joined the channel.")
+			self.addMessage(player, "joined the channel.")
 
-	def removePlayer(self, player):
+
+	def removePlayer(self, player, kicked=False):
 		'''
 		removes a player from the channel
 		'''
 		self.players.remove(player)
 		player.chatChannels.remove(self)
 
-		player.connection.send_cc("^!You have left <" + self.name + ">.^~\n")
+		if not kicked:
+			player.connection.send_cc("^!You have left <" + self.name + ">.^~\n")
+		else:
+			player.connection.send_cc("^!You were kicked from <" + self.name + ">.^~\n")
 
 		for plyr in self.players:
-			msg = "^!<" + self.name + ">^~ " +player.name + " left the channel.\n"
+			if not kicked:
+				msg = "^!<" + self.name + ">^~ " +player.name + " left the channel.\n"
+			else:
+				msg = "^!<" + self.name + ">^~ " + player.name + " was kicked from the channel.\n"
 			plyr.connection.send_cc(msg)
-
-		self.addMessage(player, "left the channel.")
+		if not kicked:
+			self.addMessage(player, "left the channel.")
+		else:
+			self.addMessage(player, "was kicked.")
 
 		if player.activeChatChannel == self:
 			player.activeChatChannel = None
@@ -185,6 +214,10 @@ class chatChannel():
 		formMsg = ''
 		formMsg += 'Channel Author: ' + self.author.name + '\n'
 		formMsg += 'Created: ' + self.timestamp + '\n\n'
+		if self.whitelist != []:
+			formMsg += 'whitelist active\n\n'
+		if self.blacklist != []:
+			formMsg += 'blacklist active\n\n'
 		formMsg += 'Players:\n'
 		for plyr in self.players:
 			formMsg += plyr.name + '\n'
@@ -215,3 +248,105 @@ class chatChannel():
 		formMsg += '\n(' + str(len(self.players)) + ' connected player' + mod + ')'
 
 		self.owner.owner.Renderer.messageBox(player.connection, self.name, formMsg)
+
+
+	def whitelistShow(self, player):
+		'''
+		shows the whitelist for the chat channel
+		'''
+		title = "<" + self.name + ">'s Whitelist"
+		wlstr = ''
+		for playerName in self.whitelist:
+			wlstr += playerName + "\n"
+		self.owner.owner.Renderer.messageBox(player.connection, title, wlstr)
+
+
+	def whitelistAdd(self, player, target):
+		'''
+		if the player issuing the command is the channel's author, add the target player to the whiteList
+		'''
+		if player == self.author:
+			if target not in self.whitelist:
+				self.whitelist.append(target)
+				player.connection.send_cc("%s was added to the whitelist.\n" %target)
+			else:
+				player.connection.send_cc("%s is already on the whitelist.\n" %target)
+		else:
+			player.connection.send_cc("You must be the author of a channel to add players to the whitelist.\n")
+
+
+	def whitelistRemove(self, player, target):
+		'''
+		if the player issuing the command is the channel's author, remove the target player from the whiteList
+		'''
+		if player == self.author:
+			if target in self.whitelist:
+				self.whitelist.remove(target)
+				for plyr in self.players:
+					if plyr.name == target:
+						self.removePlayer(plyr, kicked=True)
+				#print self.whitelist, len(self.whitelist)
+				player.connection.send_cc("%s was removed from the whitelist.\n" %target)
+			else:
+				player.connection.send_cc("%s is not on the whitelist.\n" %target)
+		else:
+			player.connection.send_cc("You must be the author of a channel to remove players from the whitelist.\n")
+
+
+	def whitelistClear(self, player):
+		'''
+		clears the whitelist of all players
+		'''
+		if player == self.author:
+			self.whitelist = []
+			player.connection.send_cc("^!<%s>'s whitelist cleared.^~\n" %self.name)
+
+	def blacklistShow(self, player):
+		'''
+		shows the whitelist for the chat channel
+		'''
+		title = "<" + self.name + ">'s Blacklist"
+		blstr = ''
+		for playerName in self.blacklist:
+			blstr += playerName + "\n"
+		self.owner.owner.Renderer.messageBox(player.connection, title, blstr)
+
+
+	def blacklistAdd(self, player, target):
+		'''
+		if the player issuing the command is the channel's author, add the target player to the whiteList
+		'''
+		if player == self.author:
+			if target not in self.blacklist:
+				self.blacklist.append(target)
+				for plyr in self.players:
+					if plyr.name == target:
+						self.removePlayer(plyr, kicked=True)
+				player.connection.send_cc("%s was added to the blacklist.\n" %target)
+			else:
+				player.connection.send_cc("%s is already on the blacklist.\n" %target)
+		else:
+			player.connection.send_cc("You must be the author of a channel to add players to the blacklist.\n")
+
+
+	def blacklistRemove(self, player, target):
+		'''
+		if the player issuing the command is the channel's author, remove the target player from the whiteList
+		'''
+		if player == self.author:
+			if target in self.blacklist:
+				self.blacklist.remove(target)
+				player.connection.send_cc("%s was removed from the blacklist.\n" %target)
+			else:
+				player.connection.send_cc("%s is not on the blacklist.\n" %target)
+		else:
+			player.connection.send_cc("You must be the author of a channel to remove players from the blacklist.\n")
+
+
+	def blacklistClear(self, player):
+		'''
+		clears the blacklist of all players
+		'''
+		if player == self.author:
+			self.blacklist = []
+			player.connection.send_cc("^!<%s>'s blacklist cleared.^~\n" %self.name)

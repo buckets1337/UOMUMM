@@ -6,7 +6,7 @@ def chatCommand(engine, client, player):
 	'''
 	processes the subcommands of chat
 	'''
-	if engine.args[0] == 'newChat' or engine.args[0] == '/new':		
+	if engine.args[0] == 'newChat' or engine.args[0] == '/new':						#newChat /new	
 		if len(engine.args) >= 2:
 			channelName = ''
 			for arg in engine.args[1:]:
@@ -16,10 +16,10 @@ def chatCommand(engine, client, player):
 		else:
 			player.connection.send_cc("What did you want to call the channel?\n")
 
-	elif engine.args[0] == 'listChat' or engine.args[0] == '/list':
+	elif engine.args[0] == 'listChat' or engine.args[0] == '/list':					#listChat /list
 		listChannels(engine.owner, player)
 
-	elif engine.args[0] == 'switchChat' or engine.args[0] == '/switch':
+	elif engine.args[0] == 'switchChat' or engine.args[0] == '/switch':				#switchChat /switch
 		if len(engine.args) >= 2:
 			#print engine.args
 			channelName = ''
@@ -30,7 +30,7 @@ def chatCommand(engine, client, player):
 		else:
 			player.connection.send_cc("^!What channel did you want to switch to?^~\n")
 
-	elif engine.args[0] == 'leaveChat' or engine.args[0] == '/leave':
+	elif engine.args[0] == 'leaveChat' or engine.args[0] == '/leave':				#leaveChat /leave
 		if len(engine.args) >= 2:
 			channelName = ''
 			for arg in engine.args[1:]:
@@ -40,7 +40,7 @@ def chatCommand(engine, client, player):
 		else:
 			player.connection.send_cc("What channel did you want to leave?\n")
 
-	elif engine.args[0] == 'delChat' or engine.args[0] == '/del':	# not implemented
+	elif engine.args[0] == 'delChat' or engine.args[0] == '/del':					#delChat /del
 		if len(engine.args) <= 1:
 			if player.activeChatChannel != None:
 				delChannel(engine.owner, player.activeChatChannel, player)
@@ -60,28 +60,85 @@ def chatCommand(engine, client, player):
 			else:
 				player.connection.send_cc("^!There doesn't appear to be a '" + chanName + "' channel.^~\n")
 
-	elif engine.args[0] == 'meChat' or engine.args[0] == '/me':		# not implemented
+	elif engine.args[0] == 'meChat' or engine.args[0] == '/me':						#meChat /me
 		playerChannelInfo(engine.owner, player)
 
-	elif engine.args[0] == 'infoChat' or engine.args[0] == '/info':
+	elif engine.args[0] == 'infoChat' or engine.args[0] == '/info':					#infoChat /info
 		if player.activeChatChannel != None:
 			player.activeChatChannel.info(player)
 		else:
 			player.connection.send_cc("^!You must be active in a channel to get information about it.\n^~")
 
-	elif engine.args[0] == 'whoChat' or engine.args[0] == '/who':
+	elif engine.args[0] == 'whoChat' or engine.args[0] == '/who':					#whoChat /who
 		if player.activeChatChannel != None:
 			player.activeChatChannel.listPlayers(player)
 		else:
 			player.connection.send_cc("^!You must be active in a channel to see who is in it.\n^~")
 
-	elif engine.args[0] == 'exitChat' or engine.args[0] == '/exit':
+	elif engine.args[0] == 'exitChat' or engine.args[0] == '/exit':					#exitChat /exit
 		if player.activeChatChannel != None:
 			player.activeChatChannel.removePlayer(player)
 		else:
 			player.connection.send_cc("^!You must be active in a channel to exit it.\n^~")
 
-	else:
+	elif engine.args[0] == 'whitelistChat' or engine.args[0] == '/whitelist':		#whitelistChat /whitelist
+		if len(engine.args) >= 2:
+			if player.activeChatChannel != None:
+				if engine.args[1] == 'show':
+					player.activeChatChannel.whitelistShow(player)
+				elif engine.args[1] == 'add':
+					targetName = ''
+					for arg in engine.args[2:]:
+						targetName += arg + " "
+					targetName = targetName[:-1]
+					targetName = targetName.strip()
+					player.activeChatChannel.whitelistAdd(player, targetName)
+				elif engine.args[1] == 'remove':
+					targetName = ''
+					for arg in engine.args[2:]:
+						targetName += arg + " "
+					targetName = targetName[:-1]
+					targetName = targetName.strip()
+					player.activeChatChannel.whitelistRemove(player, targetName)
+				elif engine.args[1] == 'clear':
+					player.activeChatChannel.whitelistClear(player)
+				else:
+					player.connection.send_cc("^!What do you want to do with the whitelist?\n^~")
+			else:
+				player.connection.send_cc("^!You must be active in a channel to see the channel's whitelist.\n^~")
+		else:
+			player.connection.send_cc("^!What do you want to do with the whitelist?\n^~")
+
+	elif engine.args[0] == 'blacklistChat' or engine.args[0] == '/blacklist':		#blacklistChat /blacklist
+		if len(engine.args) >= 2:
+			if player.activeChatChannel != None:
+				if engine.args[1] == 'show':
+					player.activeChatChannel.blacklistShow(player)
+				elif engine.args[1] == 'add':
+					targetName = ''
+					for arg in engine.args[2:]:
+						targetName += arg + " "
+					targetName = targetName[:-1]
+					targetName = targetName.strip()
+					player.activeChatChannel.blacklistAdd(player, targetName)
+				elif engine.args[1] == 'remove':
+					targetName = ''
+					for arg in engine.args[2:]:
+						targetName += arg + " "
+					targetName = targetName[:-1]
+					targetName = targetName.strip()
+					player.activeChatChannel.blacklistRemove(player, targetName)
+				elif engine.args[1] == 'clear':
+					player.activeChatChannel.blacklistClear(player)
+
+				else:
+					player.connection.send_cc("^!What do you want to do with the blacklist?\n^~")
+			else:
+				player.connection.send_cc("^!You must be active in a channel to see the channel's blacklist.\n^~")
+		else:
+			player.connection.send_cc("^!What do you want to do with the blacklist?\n^~")
+
+	else:																			#notInChannel error
 		if player.activeChatChannel != None:
 			player.activeChatChannel.sendMessage(engine.owner, player, engine.cmd, engine.msg)
 		else:
@@ -127,7 +184,10 @@ def listChannels(server, player):
 	channelList = server.chatManager.chatList
 	formList = ''
 	for chan in channelList:
-		formList += "(" + str(len(chan.players)) + ") " + chan.name + "\n"
+		mod = ''
+		if len(chan.whitelist) != 0:
+			mod = " *I* "
+		formList += "(" + str(len(chan.players)) + ")" + mod + chan.name + "\n"
 
 	server.Renderer.messageBox(player.connection, 'Public Chat Channels', formList)
 
