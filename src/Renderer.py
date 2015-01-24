@@ -126,3 +126,73 @@ class Renderer():
 			client.send_cc(" |" + ((4 + len(str(title))) * " ") + "|\n")
 			client.send_cc(finalMsg)
 			client.send_cc(" |" + ((4 + len(str(title))) * "_") + "|\n\n")
+
+
+	def roomDisplay(self, client, room):
+		'''
+		renders the typical display for a room to client
+		'''
+
+		namePad = 80 - len(room.name) - 2
+
+		client.send_cc("\n")
+		message = "+" + ("-" * (int(0.5 *namePad)-1)) + "^! " + str(room.name) + " ^~" + ("-" * (int(0.5* namePad)-1)) + "+" + "\n"
+		if len(message) < 81:
+			message = "+" + ("-" * (int(0.5 *namePad)-1)) + "^! " + str(room.name) + " ^~" + ("-" * (int(0.5* namePad)-1)) + "-+" + "\n"
+		client.send_cc(message)
+		# client.send_cc("|" + (" " * 78) + "|" + "\n")
+
+		descrip = self.formatMessage(room.description, 76)
+		desc = descrip.split("\\n")
+		#print desc
+		for line in desc:
+			linePad = 80 - len(line) - 2
+			if len(line) > 0:
+				message = "|" +(" " * (int(0.5 *linePad))) + line +(" " * (int(0.5 *linePad))) + "|" + "\n"
+				if len(message) < 81:
+					message = ("|" +(" " * (int(0.5 *linePad))) + line +(" " * (int(0.5 *linePad))) + " |" + "\n")
+				client.send_cc(message)
+
+			else:
+				client.send_cc("|" + (" " * 78) + "|" + "\n")
+		client.send_cc("+" + ("-" * 78) + "+" + "\n")
+
+		client.send_cc("|" + (" " * 78) + "|" + "\n")
+		#print "players: " + str(room.players)
+		for player in room.players:
+			if player.connection != client:
+				playerPad = int(80 - len(player.name) - 3)
+				client.send_cc("| " + "^C" + str(player.name) + "^~" + (" " * playerPad) + "|" + "\n")
+			else:
+				client.send_cc("|" + (" " * 78) + "|" + "\n")
+		client.send_cc("|" + (" " * 78) + "|" + "\n")
+
+		client.send_cc("|" + (" " * 78) + "|" + "\n")
+		exitList = []
+		if room.orderedExits == []:
+			print 'test'
+			print room.exits
+			for exit in room.exits:
+				print room.exits[exit]
+				exitList.append(str(room.exits[exit]))
+			room.orderedExits = exitList
+		else:
+			for rm in room.orderedExits:
+				exitList.append(str(rm[1]))
+		print exitList
+		if exitList != []:
+			lenExit = len(exitList[0])
+		else:
+			lenExit = 0
+		firstPad = int(80 - lenExit - 12)
+		if exitList != []:
+			msg = "| " + "^!exits:^~ 1." + exitList[0] + (" " * firstPad) + "|" + "\n"
+			client.send_cc(msg)
+			i = 2
+			for exit in exitList[1:]:
+				pad = int(80 - len(exitList[i-1]) - 12)
+				client.send_cc("|        " + str(i) + "." + exitList[i-1] + (" " * pad) + "|" + "\n")
+				i += 1
+		else:
+			client.send_cc("|" + (" " * 78) + "|" + "\n")
+		client.send_cc("+" + ("-" * 78) + "+" + "\n")

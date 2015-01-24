@@ -3,3 +3,5 @@
 
 IDLE_TIMEOUT = 300
 LOGIN_ATTEMPTS = 4
+
+STARTING_ROOM = 'tutorial/white_room'

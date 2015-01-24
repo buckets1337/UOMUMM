@@ -6,7 +6,7 @@ sys.path.append('../')
 from passlib.hash import sha256_crypt
 
 import CONFIG
-from commands import chat, who, quit
+from commands import chat, who, quit, move
 
 class Engine():
 	'''
@@ -39,12 +39,17 @@ class Engine():
 					if player.isFirstTime:
 						self.passwordPrompt(client, player)
 					else:
-						self.writePlayerPasswordToFile(client, player)
+						#self.writePlayerPasswordToFile(client, player)
+						#player.loadFromFile()
 						self.passwordAuth(client, player)
 					if player.authSuccess:
-						self.owner.printLog(">> %s (%s) authenticated successfully." %(player.player_data_ID, player.name), self.owner.log_file)
-						player.saveToFile()
+						# load player details from file, if they exist
+						player.loadFromFile()
+						self.owner.printLog(">> %s [%s] authenticated successfully. (%s)" %(player.player_data_ID, player.name, player.currentRoom.ID), self.owner.log_file)
 						client.send_cc("Password confirmed.  Enjoy your time in %s!\n\n" %self.owner.name)
+						player.saveToFile()
+						if player.currentRoom != None:
+							self.owner.Renderer.roomDisplay(player.connection, player.currentRoom)
 				self.checkForCommand(client, player)
 
 		return 'normal'
@@ -200,4 +205,11 @@ class Engine():
 			
 			elif self.cmd.startswith("'") or self.cmd.startswith("`"):
 				chat.quickChat(self, client, player)
+
+			elif self.cmd == 'move' or self.cmd == 'm':
+				move.toRoom(self.owner, player, self.args)
+
+			elif self.cmd in [str(1),str(2),str(3),str(4),str(5),str(6),str(7),str(8),str(9)]:
+				sndlist = [str(self.cmd)]
+				move.toRoom(self.owner, player, sndlist)
 				

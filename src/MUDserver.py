@@ -23,7 +23,7 @@
 Simple MUD server using miniboa
 """
 import time, os, sys
-import Engine, ClientInfo, Renderer, ChatManager
+import Engine, ClientInfo, Renderer, ChatManager, Structures
 import CONFIG
 sys.path.append('../')
 from miniboa import TelnetServer
@@ -38,21 +38,26 @@ class Server():
 		self.port = int(sys.argv[1])
 		self.id_counter = 0
 		self.idle_timeout = CONFIG.IDLE_TIMEOUT
+
 		self.log_file = None
 		self.chat_log_file_byDate = None
+
 		self.connected_clients = []
 		self.cc = self.connected_clients
 		self.server_run = True
 		self.engine_state = 'running'
 		self.player_data = {}
 		self.pd = self.player_data
+
 		self.timers = []
 		self.move_timers = []
 		self.current_time = 0
 		self.startup_time = time.time()
 		self.delta_time = 0
 		self.last_time = 0
+
 		self.god_list = []
+
 
 		# with open('../data/god_list', 'r') as f:
 		# 	self.god_list = f.readlines()
@@ -73,7 +78,11 @@ class Server():
 		self.Engine = Engine.Engine(self, self.server_run, self.god_list, self.cc, self.pd)
 		self.Renderer = Renderer.Renderer(self)
 		self.chatManager = ChatManager.chatManager(self)
-		
+		self.structureManager = Structures.StructureManager(self)
+
+		self.structureManager.loadAreas()
+
+
 
 
 	def RUN(self):
@@ -106,7 +115,7 @@ class Server():
 		creates server log files for writing in later
 		'''
 		time_string = time.strftime('%H_%M_%S')
-		date = time.strftime('%m_%d')
+		date = time.strftime('%m_%d_%Y')
 		dataPath = '../data/'
 		logPath = dataPath + 'log/'
 		server_path = logPath + self.name + '/'
@@ -118,6 +127,7 @@ class Server():
 		chat_date = chat_by_date + date + '/'
 		file_path = path + time_string
 		chat_log_path = chat_date + time_string
+		const_log_path = server_path + 'const' + '/' + date + "-" + time_string
 
 		if not os.path.exists(dataPath):
 			os.mkdir(dataPath)
@@ -143,10 +153,16 @@ class Server():
 		if not os.path.exists(chat_log_path):
 			f = open(chat_log_path, 'a')
 			f.close()
+		if not os.path.exists(server_path + 'const/'):
+			os.mkdir(server_path + 'const/')
+		if not os.path.exists(const_log_path):
+			f = open(const_log_path, 'a')
+			f.close()
 
 		self.log_file = file_path
 		self.chat_log_file_byDate = chat_log_path
 		self.chat_log_file_byChannel = chat_by_channel
+		self.const_log = const_log_path
 
 
 	def setupClientRecords(self):

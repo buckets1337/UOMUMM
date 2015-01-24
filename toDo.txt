@@ -2,20 +2,29 @@
 # ideas for things to add
 
 Geography
-- 'area' and 'room' objects, to begin defining the world.  The area objects should be very simple, nothing more than containers for other areas and rooms, with stats.  Right now I envision areas defined by directories, while rooms will be files.  However, I think each area will need an 'area stats' file to keep track of it's state.  Simple organization like this, with nesting, should prove flexible in the future.
-- room exits
+
+x 'area' and 'room' objects, to begin defining the world.  The area objects should be very simple, nothing more than containers for other areas and rooms, with stats.  Right now I envision areas defined by directories, while rooms will be files.  However, I think each area will need an 'area stats' file to keep track of it's state.  Simple organization like this, with nesting, should prove flexible in the future.
+x room exits
+x place the player in a room on connection
+x players need to beging keeping track of what room they are in
+
 - simple movement commands
 
+
 Chat
+
+x whitelisting for channels
+x blacklisting for channels
+
 - optional password protection on chat channels
 - default chat channels (global chat)
 - need to expire old unused chat channels, and need ability to set a chat channel to not expire
-x whitelisting for channels
-x blacklisting for channels
 - bug where string names consisting only of spaces can be added to whitelists and blacklists.
 - whitelists and blacklists should check that a player is online before adding them
 - players should be able to block other players entirely
 
+
 Display
-- a basic room display, that is shown automatically on room entrance
+
+x a basic room display, that is shown automatically on room entrance
 - description and long description viewing commands
