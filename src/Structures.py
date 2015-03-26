@@ -1,7 +1,8 @@
 # Structures.py
 # defines world structure objects that form areas and rooms
 
-import os
+import os, errno
+import CONFIG
 
 class StructureManager():
 	'''
@@ -42,14 +43,14 @@ class StructureManager():
 					exitList = exitStr.split(", ")
 				else:
 					exitList = [exitStr]
-				print "EXIT:" + str(exitList)
+				#print "EXIT:" + str(exitList)
 				for exit in exitList:
 					exitDesc = exit.split("|")
 					#print exitDesc
 					# for ext in exitDesc:
 					# 	if ext == ['\n']:
 					# 		exitDesc.remove(ext)
-					print "EL:" + str(exitDesc)
+					#print "EL:" + str(exitDesc)
 					if exitDesc != ['']:
 						exits[exitDesc[0]] = exitDesc[1]
 						orderedExits.append(exitDesc)
@@ -62,7 +63,7 @@ class StructureManager():
 			ID = str(area) + "/" + str(name)
 
 
-		newRoom = Room(area=area, name=name, ID=ID, exits=exits, description=description, Long=Long)
+		newRoom = Room(owner=self, area=area, name=name, ID=ID, exits=exits, description=description, Long=Long)
 		newRoom.orderedExits = orderedExits
 
 		self.masterRooms.append(newRoom)
@@ -88,14 +89,32 @@ class StructureManager():
 			if line.startswith("ID="):
 				ID = line[3:-1]
 
+		if ID == None:
+			ID = name
 
-		newArea = Area(parent=parent, children=childList, name=name, ID=ID, rooms=roomList)
+
+		newArea = Area(owner=self, parent=parent, children=childList, name=name, ID=ID, rooms=roomList)
 
 		#parent section - get the name of the parent area from the directory tree
 		pathlist = path.split("/")
+		newArea.parentID = pathlist[-2]
+		#print pathlist
 		del pathlist[-1]
+		#print pathlist
 		newpath = "/".join(pathlist)
+		#print newpath
 		newArea.parent = newpath
+		#print 'parent=' + str(newArea.parent)
+		#print newArea.parentID
+
+		# print "areaPathLabel=" + str(pathlist[-1])
+		# print str(pathlist[-1])
+		# print self.owner.structureManager.masterAreas
+		# for area in self.owner.structureManager.masterAreas:
+		# 	print area
+		# 	if area == str(pathlist[-1]):
+		# 		newArea.parentObject = self.owner.structureManager.masterAreas[area]
+
 
 		#child section - get the name of all children areas in a list from the directory tree
 		newArea.children = childAreas
@@ -107,6 +126,8 @@ class StructureManager():
 			newArea.rooms.append(newRoom)
 			roomData.close()
 
+
+		# newArea.path = newArea.getOwnPath()
 
 		return newArea
 
@@ -134,20 +155,59 @@ class StructureManager():
 						roomFiles = files
 						dataFile = open(area[0]+"/"+f)
 						Area = self.createArea(dataFile, area[0], roomFiles, area[1])
+						print 'loading area: ' + str(Area.parent)
 						Areas[Area.ID] = Area
 						dataFile.close()
 
 		else:
-			print False		#	Load the blueprint (should be almost the same as above)
+			print "no world data present.  Loading world from blueprints."		#	Load the blueprint (should be almost the same as above)
 			if os.path.exists("../data/blueprint/world"):
 				walk = os.walk("../data/blueprint/world")
-				print str(walk)
+				#print str(walk)
+				for area in walk:
+				#print str(area)
+					files = area[2]
+					for f in files:
+						if f.startswith("_data_"):
+							files.remove(f)
+							roomFiles = files
+							dataFile = open(area[0]+"/"+f)
+							# pathList = area[0].split("/")
+							# for path in pathList:
+							# 	if path == 'blueprint':
+							# 		pathList.remove(path)
+							# newPath = "/".join(pathList)
+							newPath = area[0]
+
+							Area = self.createArea(dataFile, newPath, roomFiles, area[1])
+							print 'loading area: ' + str(Area.parent)
+							pathList = area[0].split("/")
+							for path in pathList:
+								if path == 'blueprint':
+									pathList.remove(path)
+							Area.parentID = pathList[-1]
+							del pathList[-1]
+							Area.parent = "/".join(pathList)
+							Area.path = "/_data_" + Area.ID
+							#print 'ap ' + str(Area.parent) + ' ' + str(Area.parentID) + ' ' + str(Area.path) + ' ' + str(Area.ID)
+							Areas[Area.ID] = Area
+							dataFile.close()
 
 			else:
 				self.owner.printLog("No world blueprint present.  Must have top-level 'world' area in 'blueprint' directory in 'data' directory.  World was not loaded.", self.owner.log_file)
 
 
-		self.masterAreas = Areas
+
+		self.owner.masterAreas = Areas
+		self.masterAreas = self.owner.masterAreas
+
+		for area in self.masterAreas:
+			#print self.masterAreas[area].path
+			self.masterAreas[area].getOwnPath()
+			#print self.masterAreas[area].path
+
+			for room in self.masterAreas[area].rooms:
+				room.getOwnPath()
 
 		###########################
 		# Startup Console Messages
@@ -165,6 +225,7 @@ class StructureManager():
 			self.owner.printLog(areaname + ": room= " + str(self.masterAreas[area].rooms), self.owner.const_log)
 			self.owner.printLog((" " * len(areaname)) + "  ID  = " + str(self.masterAreas[area].ID), self.owner.const_log)
 			self.owner.printLog((" " * len(areaname)) + "  pare= " + str(self.masterAreas[area].parent), self.owner.const_log)
+			self.owner.printLog((" " * len(areaname)) + "  pID = " + str(self.masterAreas[area].parentID), self.owner.const_log)
 			self.owner.printLog((" " * len(areaname)) + "  chld= " + str(self.masterAreas[area].children), self.owner.const_log)
 
 
@@ -189,25 +250,87 @@ class Area():
 	and the only area that has no parent area
 	'''
 
-	def __init__(self, parent, children, name, ID, rooms):
+	def __init__(self, owner, parent, children, name, ID, rooms):
+		self.owner = owner
 		self.parent = parent
+		self.parentID = parent
+		self.parentObject = None
 		self.children = children
 		self.name = name
 		self.ID = ID
 		self.rooms = rooms
+		self.path = None
+
+
+
+	def getOwnPath(self):
+		'''
+		walks up the tree and saves the areas found to self.path for filesaving later
+		'''
+		path = "_data_" + self.ID
+		path = self.parent + '/' + self.ID + '/' + path
+		self.path = path
+
+
+		for area in self.owner.masterAreas:
+			if self.owner.masterAreas[area].ID == self.parentID:
+				self.parentObject = area
+				#print 'po=' + str(self.parentObject)
+
 
 
 	def save(self):
 		'''
 		saves all of the area data to a text file
 		'''
-		pass
+		# for area in self.owner.masterAreas:
+		# 	print self.owner.masterAreas[area].path
+		#print self.path
+		# if self.path != "world":
+		# 	path = self.path + '/' + self.ID
+		# else:
+		# 	path = "../data/world"
+
+		try:
+			os.makedirs(self.parent)
+		except OSError as exc: # Python >2.5
+			if exc.errno == errno.EEXIST and os.path.isdir(self.parent):
+				pass
+			else: raise
+		try:
+			pathList = self.parent.split("/")
+			#del pathList[-1]
+			newPath = "/".join(pathList) + "/" + self.ID + "/_data_" +self.ID
+			anotherPath = newPath.split("/")
+			#print anotherPath
+			del anotherPath[-1]
+			anotherPath = "/".join(anotherPath)
+			#print 'ap= ' + str(anotherPath)
+			os.makedirs(anotherPath)
+			f = open(newPath, 'w')
+			f.close()
+		except OSError as exc: # Python >2.5
+			if exc.errno == errno.EEXIST and (os.path.isfile(newPath) or os.path.isdir(anotherPath)):
+				pass
+			else: raise
+		filename = self.path
+		#print filename
+		f = open(filename, 'w')
+
+		f.write(str(self) + "\n")
+		f.write("name=" + self.name + "\n")
+		f.write("ID=" + self.ID + "\n")
+
+		if CONFIG.SAVE_MESSAGES == 'on':
+			print "saved area: " + self.ID
+		f.close()
 
 
 	def load(self):
 		'''
 		loads the area from a text file
 		'''
+		pass
 
 
 class Room():
@@ -217,7 +340,8 @@ class Room():
 	other rooms that are not exits
 	'''
 
-	def __init__(self, area, name, ID, exits, description, Long):
+	def __init__(self, owner, area, name, ID, exits, description, Long):
+		self.owner = owner
 		self.area = area
 		self.name = name
 		self.ID = ID
@@ -231,9 +355,64 @@ class Room():
 		self.players = []
 		self.mobs = []
 
+		
+
 
 	def render(self, player):
 		'''
 		sends a rendered description of the room to the player
 		'''
 		pass
+
+
+	def getOwnPath(self):
+		'''
+		sets self.path to the proper path for the file that was loaded
+		'''
+		target = self.owner.masterAreas[self.area]
+		areaPath = self.owner.masterAreas[self.area].path
+
+		prePath = areaPath.split("/")
+		prePath = prePath[:-2]
+		prePath = "/".join(prePath)
+		self.path = prePath + "/" + self.ID
+
+
+	def save(self):
+		'''
+		saves the room and the objects in the room to file
+		'''
+
+		filename = self.path
+		#print filename
+		pathlist = self.path.split("/")
+		pathlist = pathlist[:-1]
+		location = "/".join(pathlist)
+		#print location
+
+		if os.path.isdir(location):
+			try:
+				f = open(filename, 'w')
+
+				f.write(str(self) + "\n\n")
+				f.write("id=" + self.ID + "\n")				
+				f.write("name=" + self.name + "\n")
+
+				exitStr = ''
+				for exit in self.orderedExits:
+					newExit = exit[0] + "|" + exit[1] + ", "
+					exitStr += newExit
+				exitStr = exitStr[:-2]
+				f.write("exits=" + exitStr + "\n\n")
+
+				f.write("description=" + self.description + "\n")
+				f.write("long=" + self.Long + "\n")
+
+
+				if CONFIG.SAVE_MESSAGES == 'on':
+					print "saved room: " + self.ID
+				f.close()
+			except OSError as exc:
+				if exc.errno == errno.EEXIST and (os.path.isfile(self.path)):
+					pass
+				else: raise

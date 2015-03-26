@@ -7,8 +7,8 @@ x 'area' and 'room' objects, to begin defining the world.  The area objects shou
 x room exits
 x place the player in a room on connection
 x players need to beging keeping track of what room they are in
-
-- simple movement commands
+x simple movement commands
+x rooms need to be added to the saveManager.  Right now, they are not saved. This causes issues when a server restarts, because the data that the areas are loaded from contains no rooms, even though the blueprint did.
 
 
 Chat
@@ -28,3 +28,10 @@ Display
 
 x a basic room display, that is shown automatically on room entrance
 - description and long description viewing commands
+
+
+BUGS *(- -)
+x directory path for area saving is messed up, all directories saving directly to 'world', and a 'world' directory is being created in 'world'.  Basically, path is being ignored.
+
+x players are not gaining a currentRoom sometimes on connecting
+x related to above, exits not linking properly in some rooms

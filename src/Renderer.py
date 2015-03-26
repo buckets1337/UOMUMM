@@ -18,6 +18,8 @@ class Renderer():
 		'''
 		count = 0
 		formatted = ''
+		if message == None:
+			message = 'None'
 		for character in range(0,len(message)):
 			char = message[character]
 			if char != '\n':
@@ -170,16 +172,16 @@ class Renderer():
 		client.send_cc("|" + (" " * 78) + "|" + "\n")
 		exitList = []
 		if room.orderedExits == []:
-			print 'test'
-			print room.exits
+			#print 'test'
+			#print room.exits
 			for exit in room.exits:
-				print room.exits[exit]
+				#print room.exits[exit]
 				exitList.append(str(room.exits[exit]))
 			room.orderedExits = exitList
 		else:
 			for rm in room.orderedExits:
 				exitList.append(str(rm[1]))
-		print exitList
+		#print exitList
 		if exitList != []:
 			lenExit = len(exitList[0])
 		else:

@@ -39,11 +39,12 @@ class Engine():
 					if player.isFirstTime:
 						self.passwordPrompt(client, player)
 					else:
-						#self.writePlayerPasswordToFile(client, player)
+						
 						#player.loadFromFile()
 						self.passwordAuth(client, player)
 					if player.authSuccess:
 						# load player details from file, if they exist
+						self.writePlayerPasswordToFile(client, player)
 						player.loadFromFile()
 						self.owner.printLog(">> %s [%s] authenticated successfully. (%s)" %(player.player_data_ID, player.name, player.currentRoom.ID), self.owner.log_file)
 						client.send_cc("Password confirmed.  Enjoy your time in %s!\n\n" %self.owner.name)
@@ -51,6 +52,9 @@ class Engine():
 						if player.currentRoom != None:
 							self.owner.Renderer.roomDisplay(player.connection, player.currentRoom)
 				self.checkForCommand(client, player)
+
+		# save something each frame to file
+		self.owner.saveManager.frameSave()
 
 		return 'normal'
 
@@ -132,11 +136,16 @@ class Engine():
 		firstLine = f.readline()
 		if firstLine.startswith("$5$rounds="):
 			return
+		f.close()
 
+		f = open(path, 'w')
 		if player.isNew:
 			player.isNew = False
-			f.write(str(sha256_crypt.encrypt(self.msg)) + "\n")
-			f.write('name=' + str(player.name) +'\n')
+			password = str(sha256_crypt.encrypt(self.msg))
+			player.password = password
+			# f.write(password + "\n")
+			# f.write('name=' + str(player.name) +'\n')
+			player.saveToFile()
 			f.close()
 
 

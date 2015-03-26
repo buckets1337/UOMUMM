@@ -36,12 +36,19 @@ class ClientInfo():
 		self.path = "../data/client/" + self.owner.name + "/" + self.name + "/" + self.name
 		f = open(self.path, 'w')
 
-		f.write(self.password + "\n")
+		if self.password != None:
+			#print 's.pw=' + self.password
+			f.write(str(self.password) + "\n")
+		else:
+			f.write("\n")
 		f.write("name=" + self.name + "\n")
 		f.write("prompt=" + self.prompt + "\n")
 
 		f.write("gameState=" + self.gameState + "\n")
-		f.write("currentRoom=" + str(self.currentRoom.ID) + "\n")
+		if self.currentRoom != None:
+			f.write("currentRoom=" + str(self.currentRoom.ID) + "\n")
+		if CONFIG.SAVE_MESSAGES == 'on':
+			print "saved player:" + self.name
 
 
 	def loadFromFile(self):
@@ -55,6 +62,11 @@ class ClientInfo():
 
 			lines = f.readlines()
 
+			#print lines
+
+			if lines != []:
+				self.password = lines[0]
+
 			for line in lines:
 				if line.startswith("name="):
 					self.name = line[5:-1]
@@ -64,18 +76,20 @@ class ClientInfo():
 					self.gameState = line[10:-1]
 				if line.startswith("currentRoom="):
 					currentRoom = line[12:-1]
-					#print currentRoom
+					print currentRoom
+					print self.owner.structureManager.masterRooms
 					for room in self.owner.structureManager.masterRooms:
+						print room.ID
 						if currentRoom == room.ID:
 							self.currentRoom = room
 							room.players.append(self)
 							#print room.players
-		print 'cr:' + str(self.currentRoom)
+		#print 'cr:' + str(self.currentRoom)
 		if self.currentRoom == None:
 			currentRoom = CONFIG.STARTING_ROOM
 			for room in self.owner.structureManager.masterRooms:
 				if currentRoom == room.ID:
 					self.currentRoom = room
 					room.players.append(self)
-		print self.currentRoom
+		#print self.currentRoom
 

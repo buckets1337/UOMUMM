@@ -23,7 +23,7 @@
 Simple MUD server using miniboa
 """
 import time, os, sys
-import Engine, ClientInfo, Renderer, ChatManager, Structures
+import Engine, ClientInfo, Renderer, ChatManager, SaveManager, Structures
 import CONFIG
 sys.path.append('../')
 from miniboa import TelnetServer
@@ -34,8 +34,23 @@ class Server():
 	The game server object.  Holds all other objects in the game.
 	'''
 	def __init__(self):
-		self.name = str(sys.argv[2])
-		self.port = int(sys.argv[1])
+		if len(sys.argv) >= 4:
+			if len(sys.argv) == 4:
+				self.name = str(sys.argv[3])
+			else:
+				serverName = ''
+				nameList = sys.argv[3:]
+				for name in nameList:
+					serverName += str(name) + ' '
+				serverName = serverName[:-1]
+				self.name = serverName
+			self.port = int(sys.argv[2])
+			if sys.argv[1] != 'localhost':
+				self.address = int(sys.argv[1])
+			else:
+				self.address = 'localhost'
+		else:
+			print "!! Command poorly formed.  Should look like 'python MUDserver.py localhost 7734 test' or similar. !!"
 		self.id_counter = 0
 		self.idle_timeout = CONFIG.IDLE_TIMEOUT
 
@@ -69,7 +84,7 @@ class Server():
 		#address should be a blank string for deployment across a network, as blank allows the server to use any network interface it finds.
 		#localhost is for testing where server and clients both exist on one computer, without going across the network
 		port=self.port,
-		address='localhost',
+		address=self.address,
 		on_connect=self.on_connect,
 		on_disconnect=self.on_disconnect,
 		timeout = .05
@@ -79,8 +94,8 @@ class Server():
 		self.Renderer = Renderer.Renderer(self)
 		self.chatManager = ChatManager.chatManager(self)
 		self.structureManager = Structures.StructureManager(self)
-
 		self.structureManager.loadAreas()
+		self.saveManager = SaveManager.SaveManager(self)
 
 
 
@@ -289,8 +304,8 @@ if __name__ == '__main__':
 	## and one to call with lost connections.
 	server = Server()
 	
-
-	print( ">> Listening for connections on port %d.  CTRL-C to break." % server.TelnetServer.port )
+	print( ">> '" + server.name + "' started successfully.")
+	print( ">> Listening for connections at [%s:%d].  CTRL-C to break." % (server.TelnetServer.address, server.TelnetServer.port ))
 
 
 	## Server Loop
